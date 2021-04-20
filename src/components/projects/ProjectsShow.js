@@ -1,9 +1,10 @@
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 import { SimpleShowLayout, Show, useQuery } from 'react-admin';
 import { makeStyles } from '@material-ui/core/styles';
 import { Grid, Typography, TableContainer, Table, TableCell, TableHead, TableRow, TableBody, Paper } from '@material-ui/core';
 import { getCurrentUserId, getUsername, getToken } from '../authProvider';
 import { currencyFormat } from "../../util";
+import { LoadingPage } from 'ra-ui-materialui';
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -36,24 +37,27 @@ const ProjectShowInfo = ({ record }) => {
 
     let totalFinancingAmount = 0;
     let totalMonthlyPAndI = 0;
-    record.projectFinancingSources.forEach( source => {
-        if (source['amount']) {
-            totalFinancingAmount += parseFloat(source['amount']);
-        }
-        if (source['principalAndInterestPayment']) {
-            totalMonthlyPAndI += parseFloat(source['principalAndInterestPayment']);
-        }
-    });
-
+    if (record.projectFinancingSources) {
+        record.projectFinancingSources.forEach( source => {
+            if (source['amount']) {
+                totalFinancingAmount += parseFloat(source['amount']);
+            }
+            if (source['principalAndInterestPayment']) {
+                totalMonthlyPAndI += parseFloat(source['principalAndInterestPayment']);
+            }
+        });
+    }
     let debtServiceRatiosStr = '';
     let debtServiceRatiosYearStr = '';
-    for ( var i=0; i<record.debtServiceRatio.length; i++) {
-        if (i < record.debtServiceRatio.length-1) {
-            debtServiceRatiosStr += record.debtServiceRatio[i].ratio + ', ';
-            debtServiceRatiosYearStr += record.debtServiceRatio[i].year + ', ';
-        } else {
-            debtServiceRatiosStr += 'and ' + record.debtServiceRatio[i].ratio;
-            debtServiceRatiosYearStr += 'and ' + record.debtServiceRatio[i].year;
+    if (record.debtServiceRatio) {
+        for ( var i=0; i<record.debtServiceRatio.length; i++) {
+            if (i < record.debtServiceRatio.length-1) {
+                debtServiceRatiosStr += record.debtServiceRatio[i].ratio + ', ';
+                debtServiceRatiosYearStr += record.debtServiceRatio[i].year + ', ';
+            } else {
+                debtServiceRatiosStr += 'and ' + record.debtServiceRatio[i].ratio;
+                debtServiceRatiosYearStr += 'and ' + record.debtServiceRatio[i].year;
+            }
         }
     }
 
@@ -69,7 +73,7 @@ const ProjectShowInfo = ({ record }) => {
             <h1>Credit Memo Summary</h1>
 
             <b>Date: {new Date().toDateString() }</b>
-            <p><b>Credit Memo Summary: {record.operatingCompany.name}</b></p>
+            <p><b>Credit Memo Summary: {record.operatingCompany && record.operatingCompany.name}</b></p>
 
             <p>Prepared by: {record.preparedByUserName || ''}</p>
 
@@ -102,7 +106,7 @@ const ProjectShowInfo = ({ record }) => {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {record.projectFinancingSources.map((row) => (
+                        {record.projectFinancingSources && record.projectFinancingSources.map((row) => (
                             <TableRow key={row.financingSource.name}>
                                 <TableCell component="th" scope="row">
                                     {row.financingSource.name}
@@ -141,7 +145,7 @@ const ProjectShowInfo = ({ record }) => {
 
             <br/>
 
-            {record.borrower.map((b, i) => {
+            {record.borrower && record.borrower.map((b, i) => {
                 if ('company' in b) {
                     let contactItems = [];
                     b.borrowerCompanyOwnership.forEach((bco, j) => {
@@ -171,9 +175,9 @@ const ProjectShowInfo = ({ record }) => {
 
             <br/>
 
-            <p><b>OC: {record.operatingCompany.name}</b></p>
+            <p><b>OC: {record.operatingCompany && record.operatingCompany.name}</b></p>
             <ul>
-            {record.projectOperatingCompanyOwnerships.map((p, i) => {
+            {record.projectOperatingCompanyOwnerships && record.projectOperatingCompanyOwnerships.map((p, i) => {
                 return (
                     <li key={i}>{p.ownershipPercentage}% owned by {p.contact.name}</li>
                 )
@@ -186,13 +190,13 @@ const ProjectShowInfo = ({ record }) => {
                 {(debtServiceRatiosStr && debtServiceRatiosYearStr) && (<li>DCR is {debtServiceRatiosStr} for {debtServiceRatiosYearStr}</li>)}
             </ul>
 
-            {record.guarantors.length > 0 &&
+            {record.guarantors && record.guarantors.length > 0 &&
                 <>
                     <p><b>Guarantors</b></p>
                 </>
             }
 
-            {record.guarantors.map((g, i) => {
+            {record.guarantors && record.guarantors.map((g, i) => {
                 return (
                     <p key={i}>{g.contact.name} -- FICO Score {g.ficoScore}</p>
                 )
@@ -219,6 +223,48 @@ export const ProjectsShow = props => (
         </SimpleShowLayout>
     </Show>
 );
+
+export const ProjectPdfContent = props => {
+    // try this pulling the record itself getting the ID from the record
+    const projectId = decodeURIComponent(props.match.params.id);
+    const [record, setRecord] = useState({});
+
+    useEffect(() => {
+        if (projectId && !record.operatingCompany) {
+            const entrypoint = process.env.REACT_APP_API_ENTRYPOINT;
+            let headers = new Headers();
+            headers.set('Authorization', 'Bearer ' + getToken());
+
+            fetch(entrypoint + projectId.replace('/api', ''), {method: 'GET', headers})
+                .then(response => {
+                    return response.json();
+                })
+                .then(record => {
+                    setRecord(record);
+                })
+        }
+    }, [record]);
+
+    return (
+        <ProjectShowInfo {...props} record={record} />
+    );
+};
+
+export const PdfLoading = (props) => {
+    const matches = window.location.pathname.match(`^/projects/(.*)/pdf$`);
+    const projectId = (matches && matches.length > 0) ? matches[1] : '';
+    if (projectId) {
+        return (
+            <ProjectPdfContent match={{
+                params: {
+                    id: projectId
+                }
+            }}/>
+        )
+    }
+    return <LoadingPage/>;
+}
+
 
 export function exportPdfProjectReport(item) {
     const entrypoint = process.env.REACT_APP_API_ENTRYPOINT;

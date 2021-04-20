@@ -7,6 +7,7 @@ import MyLayout from './layout/MyLayout';
 import DataProvider from './components/DataProvider.js'
 import Resources from './components/Resources';
 import customRoutes from './components/CustomRoutes';
+import {PdfLoading} from "./components/projects/ProjectsShow";
 
 const entrypoint = process.env.REACT_APP_API_ENTRYPOINT;
 const history = createBrowserHistory();
@@ -20,6 +21,7 @@ export default () => (
         customRoutes={customRoutes}
         dataProvider={DataProvider}
         authProvider = {authProvider}
+        loading={PdfLoading}
     >
         {Resources}
     </HydraAdmin>
