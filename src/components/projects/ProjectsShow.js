@@ -1,258 +1,399 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { SimpleShowLayout, Show, useQuery } from 'react-admin';
 import { makeStyles } from '@material-ui/core/styles';
-import { Grid, Typography, TableContainer, Table, TableCell, TableHead, TableRow, TableBody, Paper } from '@material-ui/core';
+import {
+  Grid,
+  Typography,
+  TableContainer,
+  Table,
+  TableCell,
+  TableHead,
+  TableRow,
+  TableBody,
+  Paper
+} from '@material-ui/core';
 import { getCurrentUserId, getUsername, getToken } from '../authProvider';
-import { currencyFormat } from "../../util";
-import { UserFullName } from "../users/UserData";
+import { currencyFormat } from '../../util';
+import { LoadingPage } from 'ra-ui-materialui';
 
-const useStyles = makeStyles((theme) => ({
-    root: {
-        width: '90%',
-        display: 'flex',
-        marginLeft: 'auto',
-        marginRight: 'auto'
-    },
-    gridItem: {
-        width: '15%'
-    },
-    nestedGridItem: {
-        width: '95%'
-    },
-    addButton: {
-        width: '5%'
-    },
-    selectItem: {
-        width: '90%'
-    },
-    cellbg: {
-        backgroundColor: '#eee'
-    }
+const useStyles = makeStyles(theme => ({
+  root: {
+    width: '90%',
+    display: 'flex',
+    marginLeft: 'auto',
+    marginRight: 'auto'
+  },
+  gridItem: {
+    width: '15%'
+  },
+  nestedGridItem: {
+    width: '95%'
+  },
+  addButton: {
+    width: '5%'
+  },
+  selectItem: {
+    width: '90%'
+  },
+  cellbg: {
+    backgroundColor: '#eee'
+  }
 }));
 
-
 const ProjectShowInfo = ({ record }) => {
-    const classes = useStyles();
-    // const record = props.record;
+  const classes = useStyles();
+  // const record = props.record;
 
-    let totalFinancingAmount = 0;
-    let totalMonthlyPAndI = 0;
-    record.projectFinancingSources.forEach( source => {
-        if (source['amount']) {
-            totalFinancingAmount += parseFloat(source['amount']);
-        }
-        if (source['principalAndInterestPayment']) {
-            totalMonthlyPAndI += parseFloat(source['principalAndInterestPayment']);
-        }
+  let totalFinancingAmount = 0;
+  let totalMonthlyPAndI = 0;
+  if (record.projectFinancingSources) {
+    record.projectFinancingSources.forEach(source => {
+      if (source['amount']) {
+        totalFinancingAmount += parseFloat(source['amount']);
+      }
+      if (source['principalAndInterestPayment']) {
+        totalMonthlyPAndI += parseFloat(source['principalAndInterestPayment']);
+      }
     });
-
-    let debtServiceRatiosStr = '';
-    let debtServiceRatiosYearStr = '';
-    for ( var i=0; i<record.debtServiceRatio.length; i++) {
-        if (i < record.debtServiceRatio.length-1) {
-            debtServiceRatiosStr += record.debtServiceRatio[i].ratio + ', ';
-            debtServiceRatiosYearStr += record.debtServiceRatio[i].year + ', ';
-        } else {
-            debtServiceRatiosStr += 'and ' + record.debtServiceRatio[i].ratio;
-            debtServiceRatiosYearStr += 'and ' + record.debtServiceRatio[i].year;
-        }
+  }
+  let debtServiceRatiosStr = '';
+  let debtServiceRatiosYearStr = '';
+  if (record.debtServiceRatio) {
+    for (var i = 0; i < record.debtServiceRatio.length; i++) {
+      if (i < record.debtServiceRatio.length - 1) {
+        debtServiceRatiosStr += record.debtServiceRatio[i].ratio + ', ';
+        debtServiceRatiosYearStr += record.debtServiceRatio[i].year + ', ';
+      } else {
+        debtServiceRatiosStr += 'and ' + record.debtServiceRatio[i].ratio;
+        debtServiceRatiosYearStr += 'and ' + record.debtServiceRatio[i].year;
+      }
     }
+  }
 
-    return(
+  return (
+    <>
+      <button
+        onClick={event => exportPdfProjectReport(record, event)}
+        className="btn btn-info btn-yellow pull-left export-pdf-button"
+      >
+        Export PDF
+      </button>
+      {/*{console.log(record)}*/}
+      <h1>Credit Memo Summary</h1>
+
+      <b>Date: {new Date().toDateString()}</b>
+      <p>
+        <b>
+          Credit Memo Summary:{' '}
+          {record.operatingCompany && record.operatingCompany.name}
+        </b>
+      </p>
+
+      <p>Prepared by: {record.preparedByUserName || ''}</p>
+
+      <p>
+        <b>Project collateral property:</b> {record.streetAddress} {record.city}
+        , {record.state} {record.postalCode} {record.country}
+      </p>
+
+      <div>
+        <b>Project Costs</b>
+        <ul>
+          <li>
+            Total project costs are $
+            {parseFloat(record.purchaseLandAndBuilding) +
+              parseFloat(record.tenantImprovement) +
+              parseFloat(record.eligibleFees)}
+            ; Purchased Land and Building ${record.purchaseLandAndBuilding}.
+          </li>
+          {record.generalDescription && <li>{record.generalDescription}</li>}
+        </ul>
+      </div>
+
+      <br />
+
+      <b>Financing</b>
+
+      <TableContainer component={Paper}>
+        <Table aria-label="simple table">
+          <TableHead className={classes.cellbg}>
+            <TableRow>
+              <TableCell>Source</TableCell>
+              <TableCell align="right">Amount</TableCell>
+              <TableCell align="right">Term</TableCell>
+              <TableCell align="right">%</TableCell>
+              <TableCell align="right">P&amp;I</TableCell>
+              <TableCell align="right">Amort</TableCell>
+              <TableCell align="right">Rate</TableCell>
+              <TableCell align="right">Lien</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {record.projectFinancingSources &&
+              record.projectFinancingSources.map(row => (
+                <TableRow key={row.financingSource.name}>
+                  <TableCell component="th" scope="row">
+                    {row.financingSource.name}
+                  </TableCell>
+                  <TableCell align="right">
+                    {row.amount ? currencyFormat(row.amount) : ''}
+                  </TableCell>
+                  <TableCell align="right">{row.term}</TableCell>
+                  <TableCell align="right">{row.percentage}%</TableCell>
+                  <TableCell align="right">
+                    {row.principalAndInterestPayment
+                      ? currencyFormat(row.principalAndInterestPayment)
+                      : ''}
+                  </TableCell>
+                  <TableCell align="right">
+                    {row.amortization ? row.amortization : ''}
+                  </TableCell>
+                  <TableCell align="right">
+                    {row.rate ? row.rate + '%' : ''}
+                  </TableCell>
+                  <TableCell align="right">
+                    {row.lienPosition ? row.lienPosition.position : ''}
+                  </TableCell>
+                </TableRow>
+              ))}
+            <tr>
+              <TableCell className={classes.cellbg}>
+                <b>Total Financing:</b>
+              </TableCell>
+              <TableCell align="right">
+                <b>{currencyFormat(totalFinancingAmount)}</b>
+              </TableCell>
+              <TableCell align="right" className={classes.cellbg} colSpan={2}>
+                <b>Total Monthly P&I Payment</b>
+              </TableCell>
+              <TableCell align="right">
+                <b>{currencyFormat(totalMonthlyPAndI)}</b>
+              </TableCell>
+              <TableCell align="right" className={classes.cellbg} colSpan={2}>
+                <b>Total Annualized Payments</b>
+              </TableCell>
+              <TableCell align="right">
+                <b>{currencyFormat(totalMonthlyPAndI * 12)}</b>
+              </TableCell>
+            </tr>
+            <tr>
+              <TableCell>
+                <b>Prepayment Penalty</b>
+              </TableCell>
+              <TableCell colSpan={7}>
+                {record.paymentPenalty ? 'Yes' : 'no'}
+              </TableCell>
+            </tr>
+            <tr>
+              <TableCell className={classes.cellbg}>
+                <b>Interim Lender</b>
+              </TableCell>
+              <TableCell colSpan={7}>
+                {record.interimLender ? record.interimLender.name : 'n/a'}
+              </TableCell>
+            </tr>
+            <tr>
+              <TableCell className={classes.cellbg} colSpan={8}>
+                The CDC Interest Rate in the Financing Chart represents the
+                coupon rate on the note. The SBA monthly P&I payment is
+                calculated based on the "all-in" rate (coupon plus other fees)
+                for the first 5 year period.
+              </TableCell>
+            </tr>
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      <br />
+
+      {record.borrower &&
+        record.borrower.map((b, i) => {
+          if ('company' in b) {
+            let contactItems = [];
+            b.borrowerCompanyOwnership.forEach((bco, j) => {
+              contactItems.push(
+                <li key={j}>
+                  {bco.ownershipPercent}% owned by {bco.contact.name}
+                </li>
+              );
+            });
+
+            return (
+              <div key={i}>
+                <BorrowerLabel label={b.company.name} />
+                <ul>{contactItems}</ul>
+                <br />
+              </div>
+            );
+          } else {
+            return (
+              <div key={i}>
+                <BorrowerLabel label={b.contact.name} />
+                <br />
+                <br />
+              </div>
+            );
+          }
+        })}
+
+      <br />
+
+      <p>
+        <b>OC: {record.operatingCompany && record.operatingCompany.name}</b>
+      </p>
+      <ul>
+        {record.projectOperatingCompanyOwnerships &&
+          record.projectOperatingCompanyOwnerships.map((p, i) => {
+            return (
+              <li key={i}>
+                {p.ownershipPercentage}% owned by {p.contact.name}
+              </li>
+            );
+          })}
+        {record.ocGeneralDescription && <li>{record.ocGeneralDescription}</li>}
+      </ul>
+      <p>
+        <b>Historical Cash Flows</b>
+      </p>
+      <ul>
+        <li>
+          As of {new Date(record.periodEndingDate).toLocaleDateString('en-US')},
+          the OC has {record.cashOnHand ? '$' + record.cashOnHand : 'n/a'} and{' '}
+          {record.workingCapital ? '$' + record.workingCapital : 'n/a'}.
+          Liquidity is{' '}
+          {record.liquidityStrength ? record.liquidityStrength : 'n/a'} as shown
+          by the current ratio of{' '}
+          {record.liquidityRatio ? record.liquidityRatio : 'n/a'}
+        </li>
+        {debtServiceRatiosStr && debtServiceRatiosYearStr && (
+          <li>
+            DCR is {debtServiceRatiosStr} for {debtServiceRatiosYearStr}
+          </li>
+        )}
+      </ul>
+
+      {record.guarantors && record.guarantors.length > 0 && (
         <>
-            <button
-                onClick={event => exportPdfProjectReport(record, event)}
-                className="btn btn-info btn-yellow pull-left export-pdf-button"
-            >
-                Export PDF
-            </button>
-            {console.log(record)}
-            <h1>Credit Memo Summary</h1>
-
-            <b>Date: {new Date().toDateString() }</b>
-            <p><b>Credit Memo Summary: {record.operatingCompany.name}</b></p>
-
-            <p>Prepared by: {UserFullName(getCurrentUserId())}</p>
-
-            <p><b>Project collateral property:</b> {record.streetAddress} {record.city}, {record.state} {record.postalCode} {record.country}</p>
-
-            <p>
-                <b>Project Costs</b>
-                <ul>
-                    <li>Total project costs are ${parseFloat(record.purchaseLandAndBuilding) + parseFloat(record.tenantImprovement) + parseFloat(record.eligibleFees)}; Purchased Land and Building ${record.purchaseLandAndBuilding}.</li>
-                    {(record.generalDescription) && (<li>{record.generalDescription}</li>)}
-                </ul>
-            </p>
-
-            <b>Financing</b>
-
-            <TableContainer component={Paper}>
-                <Table aria-label="simple table">
-                    <TableHead className={classes.cellbg}>
-                        <TableRow>
-                            <TableCell>Source</TableCell>
-                            <TableCell align="right">Amount</TableCell>
-                            <TableCell align="right">Term</TableCell>
-                            <TableCell align="right">%</TableCell>
-                            <TableCell align="right">P&amp;I</TableCell>
-                            <TableCell align="right">Amort</TableCell>
-                            <TableCell align="right">Rate</TableCell>
-                            <TableCell align="right">Lien</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {record.projectFinancingSources.map((row) => (
-                            <TableRow key={row.financingSource.name}>
-                                <TableCell component="th" scope="row">
-                                    {row.financingSource.name}
-                                </TableCell>
-                                <TableCell align="right">{row.amount ? currencyFormat(row.amount) : ''}</TableCell>
-                                <TableCell align="right">{row.term}</TableCell>
-                                <TableCell align="right">{row.percentage}%</TableCell>
-                                <TableCell align="right">{row.principalAndInterestPayment ? currencyFormat(row.principalAndInterestPayment) : ''}</TableCell>
-                                <TableCell align="right">{row.amortization ? row.amortization : ''}</TableCell>
-                                <TableCell align="right">{row.rate ? row.rate + '%' : ''}</TableCell>
-                                <TableCell align="right">{row.lienPosition ? row.lienPosition.position : ''}</TableCell>
-                            </TableRow>
-                        ))}
-                        <tr>
-                            <TableCell className={classes.cellbg}><b>Total Financing:</b></TableCell>
-                            <TableCell align="right"><b>{currencyFormat(totalFinancingAmount)}</b></TableCell>
-                            <TableCell align="right" className={classes.cellbg} colSpan={2}><b>Total Monthly P&I Payment</b></TableCell>
-                            <TableCell align="right"><b>{currencyFormat(totalMonthlyPAndI)}</b></TableCell>
-                            <TableCell align="right" className={classes.cellbg} colSpan={2}><b>Total Annualized Payments</b></TableCell>
-                            <TableCell align="right"><b>{currencyFormat(totalMonthlyPAndI * 12)}</b></TableCell>
-                        </tr>
-                        <tr>
-                            <TableCell><b>Prepayment Penalty</b></TableCell>
-                            <TableCell colSpan={7}>{record.paymentPenalty ? 'Yes' : 'no'}</TableCell>
-                        </tr>
-                        <tr>
-                            <TableCell className={classes.cellbg}><b>Interim Lender</b></TableCell>
-                            <TableCell colSpan={7}>{record.interimLender ? record.interimLender.name : 'n/a'}</TableCell>
-                        </tr>
-                        <tr>
-                            <TableCell className={classes.cellbg} colSpan={8}>The CDC Interest Rate in the Financing Chart represents the coupon rate on the note. The SBA monthly P&I payment is calculated based on the "all-in" rate (coupon plus other fees) for the first 5 year period.</TableCell>
-                        </tr>
-                    </TableBody>
-                </Table>
-            </TableContainer>
-
-            <br/>
-
-            {record.borrower.map((b) => {
-                if ('company' in b) {
-                    let contactItems = [];
-                    b.borrowerCompanyOwnership.forEach((bco) => {
-                        contactItems.push(<li>{bco.ownershipPercent}% owned by {bco.contact.name}</li>);
-                    });
-
-                    return(
-                        <>
-                            <BorrowerLabel label={b.company.name}/>
-                            <ul>
-                                {contactItems}
-                            </ul>
-                            <br/>
-
-                        </>
-                    )
-                } else {
-                    return(
-                        <>
-                            <BorrowerLabel label={b.contact.name}/>
-                            <br/>
-                            <br/>
-                        </>
-                    )
-                }
-            })}
-
-            <br/>
-
-            <p><b>OC: {record.operatingCompany.name}</b></p>
-            <ul>
-            {record.projectOperatingCompanyOwnerships.map((p) => {
-                return (
-                    <li>{p.ownershipPercentage}% owned by {p.contact.name}</li>
-                )
-            })}
-            {record.ocGeneralDescription && (<li>{record.ocGeneralDescription}</li>)}
-            </ul>
-            <p><b>Historical Cash Flows</b></p>
-            <ul>
-                <li>As of {new Date(record.periodEndingDate).toLocaleDateString('en-US')}, the OC has {record.cashOnHand ? '$'+record.cashOnHand : 'n/a'} and {record.workingCapital ? '$'+record.workingCapital : 'n/a'}. Liquidity is {record.liquidityStrength ? record.liquidityStrength : 'n/a'} as shown by the current ratio of {record.liquidityRatio ? record.liquidityRatio: 'n/a'}</li>
-                {(debtServiceRatiosStr && debtServiceRatiosYearStr) && (<li>DCR is {debtServiceRatiosStr} for {debtServiceRatiosYearStr}</li>)}
-            </ul>
-
-            {record.guarantors.length > 0 &&
-                <>
-                    <p><b>Guarantors</b></p>
-                </>
-            }
-
-            {record.guarantors.map((g) => {
-                console.log(g);
-                return (
-                    <>
-                        <p>{g.contact.name} -- FICO Score {g.ficoScore}</p>
-                    </>
-                )
-            })}
-
-            <p><b>RISK RATING SCORE: {record.riskRatingScore}</b></p>
-
-            <p>SBA Appraisal Approval: {record.sbaAppraisalApproval ? 'yes' : 'no'}</p>
-            {record.sbaAuthorizationNumber && (<p>SBA Authorization #:{record.sbaAuthorizationNumber}</p>)}
-            <p>Environmental Approval: {record.environmentalApproval ? 'yes' : 'no'}</p>
-
+          <p>
+            <b>Guarantors</b>
+          </p>
         </>
-    );
+      )}
+
+      {record.guarantors &&
+        record.guarantors.map((g, i) => {
+          return (
+            <p key={i}>
+              {g.contact.name} -- FICO Score {g.ficoScore}
+            </p>
+          );
+        })}
+
+      <p>
+        <b>RISK RATING SCORE: {record.riskRatingScore}</b>
+      </p>
+
+      <p>
+        SBA Appraisal Approval: {record.sbaAppraisalApproval ? 'yes' : 'no'}
+      </p>
+      {record.sbaAuthorizationNumber && (
+        <p>SBA Authorization #:{record.sbaAuthorizationNumber}</p>
+      )}
+      <p>
+        Environmental Approval: {record.environmentalApproval ? 'yes' : 'no'}
+      </p>
+    </>
+  );
 };
 
 const BorrowerLabel = props => {
-    return (<b>Borrower/EPC: {props.label}</b>)
+  return <b>Borrower/EPC: {props.label}</b>;
 };
 
 export const ProjectsShow = props => (
-    <Show {...props}>
-        <SimpleShowLayout>
-            <ProjectShowInfo />
-        </SimpleShowLayout>
-    </Show>
+  <Show {...props}>
+    <SimpleShowLayout>
+      <ProjectShowInfo />
+    </SimpleShowLayout>
+  </Show>
 );
 
-export function exportPdfProjectReport(item) {
-    const entrypoint = process.env.REACT_APP_API_ENTRYPOINT;
-    let headers = new Headers();
+export const ProjectPdfContent = props => {
+  // try this pulling the record itself getting the ID from the record
+  const projectId = decodeURIComponent(props.match.params.id);
+  const [record, setRecord] = useState({});
 
-    headers.set('Accept', 'application/pdf');
-    headers.set('Content-Type', 'application/pdf');
-    headers.set('Authorization', 'Bearer ' + getToken());
+  useEffect(() => {
+    if (projectId && !record.operatingCompany) {
+      const entrypoint = process.env.REACT_APP_API_ENTRYPOINT;
+      let headers = new Headers();
+      headers.set('Authorization', 'Bearer ' + getToken());
 
+      fetch(entrypoint + projectId.replace('/api', ''), {
+        method: 'GET',
+        headers
+      })
+        .then(response => {
+          return response.json();
+        })
+        .then(record => {
+          setRecord(record);
+        });
+    }
+  }, [record]);
+
+  return <ProjectShowInfo {...props} record={record} />;
+};
+
+export const PdfLoading = props => {
+  const matches = window.location.pathname.match(`^/projects/(.*)/pdf$`);
+  const projectId = matches && matches.length > 0 ? matches[1] : '';
+  if (projectId) {
     return (
-        fetch(entrypoint + item['@id'].replace('/api', '') + '/export/pdf', { method: 'POST', headers })
-        // https://medium.com/yellowcode/download-api-files-with-react-fetch-393e4dae0d9e
-        // 1. Convert the data into 'blob'
-            .then(response => response.blob())
-            .then(blob => {
-                // 2. Create blob link to download
-                const url = window.URL.createObjectURL(new Blob([blob]));
-                const link = document.createElement('a');
-                link.href = url;
-                link.setAttribute(
-                    'download',
-                    `project-report-${item['@id'].replace('/api/projects/', '')}.pdf`
-                );
-                // 3. Append to html page
-                document.body.appendChild(link);
-                // 4. Force download
-                link.click();
-                // 5. Clean up and remove the link
-                link.parentNode.removeChild(link);
-            })
-            .catch(e => {
-            })
+      <ProjectPdfContent
+        match={{
+          params: {
+            id: projectId
+          }
+        }}
+      />
     );
-}
+  }
+  return <LoadingPage />;
+};
 
+export function exportPdfProjectReport(item) {
+  const entrypoint = process.env.REACT_APP_API_ENTRYPOINT;
+  let headers = new Headers();
+
+  headers.set('Accept', 'application/pdf');
+  headers.set('Content-Type', 'application/pdf');
+  headers.set('Authorization', 'Bearer ' + getToken());
+
+  return (
+    fetch(entrypoint + item['@id'].replace('/api', '') + '/export/pdf', {
+      method: 'POST',
+      headers
+    })
+      // https://medium.com/yellowcode/download-api-files-with-react-fetch-393e4dae0d9e
+      // 1. Convert the data into 'blob'
+      .then(response => response.blob())
+      .then(blob => {
+        // 2. Create blob link to download
+        const url = window.URL.createObjectURL(new Blob([blob]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute(
+          'download',
+          `project-report-${item['@id'].replace('/api/projects/', '')}.pdf`
+        );
+        // 3. Append to html page
+        document.body.appendChild(link);
+        // 4. Force download
+        link.click();
+        // 5. Clean up and remove the link
+        link.parentNode.removeChild(link);
+      })
+      .catch(e => {})
+  );
+}

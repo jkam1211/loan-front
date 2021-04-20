@@ -9,8 +9,8 @@ import {
   useRedirect,
   useMutation,
   FormDataConsumer,
-  TabbedForm, 
-  FormTab,
+  TabbedForm,
+  FormTab
 } from 'react-admin';
 import IconContentEdit from '@material-ui/icons/Edit';
 import IconCancel from '@material-ui/icons/Cancel';
@@ -110,9 +110,7 @@ function QuickEditButton({
           save={handleSubmit}
           render={({ handleSubmitWithRedirect, pristine, saving }) => (
             <>
-              <DialogContent> 
-                          {children}
-              </DialogContent>
+              <DialogContent>{children}</DialogContent>
               <DialogActions>
                 <Button
                   label={dialogCancelLabel || 'Cancel'}
