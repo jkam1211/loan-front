@@ -4,7 +4,6 @@ import { makeStyles } from '@material-ui/core/styles';
 import { Grid, Typography, TableContainer, Table, TableCell, TableHead, TableRow, TableBody, Paper } from '@material-ui/core';
 import { getCurrentUserId, getUsername, getToken } from '../authProvider';
 import { currencyFormat } from "../../util";
-import { UserFullName } from "../users/UserData";
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -66,23 +65,25 @@ const ProjectShowInfo = ({ record }) => {
             >
                 Export PDF
             </button>
-            {console.log(record)}
+            {/*{console.log(record)}*/}
             <h1>Credit Memo Summary</h1>
 
             <b>Date: {new Date().toDateString() }</b>
             <p><b>Credit Memo Summary: {record.operatingCompany.name}</b></p>
 
-            <p>Prepared by: {UserFullName(getCurrentUserId())}</p>
+            <p>Prepared by: {record.preparedByUserName || ''}</p>
 
             <p><b>Project collateral property:</b> {record.streetAddress} {record.city}, {record.state} {record.postalCode} {record.country}</p>
 
-            <p>
+            <div>
                 <b>Project Costs</b>
                 <ul>
                     <li>Total project costs are ${parseFloat(record.purchaseLandAndBuilding) + parseFloat(record.tenantImprovement) + parseFloat(record.eligibleFees)}; Purchased Land and Building ${record.purchaseLandAndBuilding}.</li>
                     {(record.generalDescription) && (<li>{record.generalDescription}</li>)}
                 </ul>
-            </p>
+            </div>
+
+            <br/>
 
             <b>Financing</b>
 
@@ -140,30 +141,30 @@ const ProjectShowInfo = ({ record }) => {
 
             <br/>
 
-            {record.borrower.map((b) => {
+            {record.borrower.map((b, i) => {
                 if ('company' in b) {
                     let contactItems = [];
-                    b.borrowerCompanyOwnership.forEach((bco) => {
-                        contactItems.push(<li>{bco.ownershipPercent}% owned by {bco.contact.name}</li>);
+                    b.borrowerCompanyOwnership.forEach((bco, j) => {
+                        contactItems.push(<li key={j}>{bco.ownershipPercent}% owned by {bco.contact.name}</li>);
                     });
 
                     return(
-                        <>
+                        <div key={i}>
                             <BorrowerLabel label={b.company.name}/>
                             <ul>
                                 {contactItems}
                             </ul>
                             <br/>
 
-                        </>
+                        </div>
                     )
                 } else {
                     return(
-                        <>
+                        <div key={i}>
                             <BorrowerLabel label={b.contact.name}/>
                             <br/>
                             <br/>
-                        </>
+                        </div>
                     )
                 }
             })}
@@ -172,9 +173,9 @@ const ProjectShowInfo = ({ record }) => {
 
             <p><b>OC: {record.operatingCompany.name}</b></p>
             <ul>
-            {record.projectOperatingCompanyOwnerships.map((p) => {
+            {record.projectOperatingCompanyOwnerships.map((p, i) => {
                 return (
-                    <li>{p.ownershipPercentage}% owned by {p.contact.name}</li>
+                    <li key={i}>{p.ownershipPercentage}% owned by {p.contact.name}</li>
                 )
             })}
             {record.ocGeneralDescription && (<li>{record.ocGeneralDescription}</li>)}
@@ -191,12 +192,9 @@ const ProjectShowInfo = ({ record }) => {
                 </>
             }
 
-            {record.guarantors.map((g) => {
-                console.log(g);
+            {record.guarantors.map((g, i) => {
                 return (
-                    <>
-                        <p>{g.contact.name} -- FICO Score {g.ficoScore}</p>
-                    </>
+                    <p key={i}>{g.contact.name} -- FICO Score {g.ficoScore}</p>
                 )
             })}
 
