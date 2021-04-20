@@ -5,10 +5,10 @@ import { ResourceGuesser } from '@api-platform/admin';
 // import RoleAuthorizationList from './List';
 
 export default (
-    <ResourceGuesser
-        name="role_authorizations"
-        // create={RoleAuthorizationCreate}
-        // edit={RoleAuthorizationEdit}
-        // list={RoleAuthorizationList}
-    />
+  <ResourceGuesser
+    name="role_authorizations"
+    // create={RoleAuthorizationCreate}
+    // edit={RoleAuthorizationEdit}
+    // list={RoleAuthorizationList}
+  />
 );

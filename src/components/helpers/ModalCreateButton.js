@@ -10,7 +10,7 @@ const useStyles = makeStyles({
 });
 const spySubscription = { values: true };
 const ModalCreateButton = props => {
-  const {disabled} = props;
+  const { disabled } = props;
   const classes = useStyles();
   const [version, setVersion] = useState(0);
   const { values } = useFormState({ subscription: spySubscription });
@@ -20,12 +20,11 @@ const ModalCreateButton = props => {
     },
     [version]
   );
-  
-    return (
-      <QuickCreateButton onChange={handleChange} {...props} defaultValues={{}}>
-        {props.children}
-      </QuickCreateButton>
-    );
 
+  return (
+    <QuickCreateButton onChange={handleChange} {...props} defaultValues={{}}>
+      {props.children}
+    </QuickCreateButton>
+  );
 };
 export default ModalCreateButton;

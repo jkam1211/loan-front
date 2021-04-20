@@ -1,5 +1,4 @@
 import React from 'react';
-import {ResourceGuesser} from "@api-platform/admin";
+import { ResourceGuesser } from '@api-platform/admin';
 
-
-export default ( <ResourceGuesser name = 'guarantors' /> );
+export default <ResourceGuesser name="guarantors" />;

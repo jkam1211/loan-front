@@ -1,6 +1,6 @@
-import { defaultTheme } from "react-admin";
-import createMuiTheme from "@material-ui/core/styles/createMuiTheme";
-import merge from "lodash/merge";
+import { defaultTheme } from 'react-admin';
+import createMuiTheme from '@material-ui/core/styles/createMuiTheme';
+import merge from 'lodash/merge';
 
 export const theme = createMuiTheme(
   merge({}, defaultTheme, {
@@ -14,19 +14,25 @@ export const theme = createMuiTheme(
         light: '#B3B3B6',
         main: '#050401',
         dark: '#131316'
-      },
+      }
     },
     typography: {
-      fontFamily: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Arial', 'sans-serif'].join(','),
+      fontFamily: [
+        '-apple-system',
+        'BlinkMacSystemFont',
+        '"Segoe UI"',
+        'Arial',
+        'sans-serif'
+      ].join(',')
     },
     overrides: {
-        MuiTableRow: {
+      MuiTableRow: {
         head: {
-            "& > th ": {
+          '& > th ': {
             color: 'black',
             fontWeight: 'bold',
             fontSize: '1rem'
-            }
+          }
         }
       },
       RaAutocompleteSuggestionList: {
@@ -36,29 +42,29 @@ export const theme = createMuiTheme(
       },
       MuiPaper: {
         elevation1: {
-            boxShadow: 'none',
+          boxShadow: 'none'
         },
         root: {
-            border: '1px solid #e0e0e3',
-            backgroundClip: 'padding-box',
-        },
-    },
-        RaMenuItemLink: {
-          root: {
-              borderLeft: '3px solid #fff',
-              backgroundColor: 'rgba(167,173,186,0.4)',
-              marginRight: '0.5rem',
-              '& svg' : {color: '#050401'},
-              fontSize: '1.1rem',
-              borderBottom: '1px solid rgba(80,80,80,0.2)',
-          },
-          active: {
-              '& svg' : {color: '#C92403'},
-              backgroundColor: 'rgba(167,173,186,0.8)',
-              fontWeight: 'Bold',
-              color: 'rgba(20,20,30,0.9)'
-          },
+          border: '1px solid #e0e0e3',
+          backgroundClip: 'padding-box'
+        }
       },
-    }  
+      RaMenuItemLink: {
+        root: {
+          borderLeft: '3px solid #fff',
+          backgroundColor: 'rgba(167,173,186,0.4)',
+          marginRight: '0.5rem',
+          '& svg': { color: '#050401' },
+          fontSize: '1.1rem',
+          borderBottom: '1px solid rgba(80,80,80,0.2)'
+        },
+        active: {
+          '& svg': { color: '#C92403' },
+          backgroundColor: 'rgba(167,173,186,0.8)',
+          fontWeight: 'Bold',
+          color: 'rgba(20,20,30,0.9)'
+        }
+      }
+    }
   })
 );

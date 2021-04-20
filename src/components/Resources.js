@@ -16,19 +16,19 @@ import inviteResource from './invite/index';
 // import staffUserResource from './staff_users/StaffUsers';
 // eslint-disable-next-line import/no-anonymous-default-export
 export default [
-    projectResource,
-    companyResource,
-    contactResource,
-    financingSourceResource,
-    lienPositionResource,
-    borrowerResource,
-    projectFinancingSourceResource,
-    borrowerCompanyOwnershipResource,
-    projectOperatingCompanyOwnershipResource,
-    guarantorResource,
-    debtServiceRatioResource,
-    usersResource,
-    inviteResource,
-    // adminDashboard,
-    // staffUserResource
+  projectResource,
+  companyResource,
+  contactResource,
+  financingSourceResource,
+  lienPositionResource,
+  borrowerResource,
+  projectFinancingSourceResource,
+  borrowerCompanyOwnershipResource,
+  projectOperatingCompanyOwnershipResource,
+  guarantorResource,
+  debtServiceRatioResource,
+  usersResource,
+  inviteResource
+  // adminDashboard,
+  // staffUserResource
 ];

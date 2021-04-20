@@ -14,22 +14,43 @@ const CompanyFormField = ({ record }) => {
         </Grid>
         <Grid container spacing={2}>
           <Grid item xs={12} sm={6}>
-            <TextInput fullWidth  label = 'Company Name' source = 'name' id = 'companyName2' validate = {[required()]}/>                    
+            <TextInput
+              fullWidth
+              label="Company Name"
+              source="name"
+              id="companyName2"
+              validate={[required()]}
+            />
           </Grid>
           <Grid item xs={12} sm={6}>
-            <TextInput fullWidth label = 'Street Address' source = 'streetAddress' id = 'streetAddress2' />             
+            <TextInput
+              fullWidth
+              label="Street Address"
+              source="streetAddress"
+              id="streetAddress2"
+            />
           </Grid>
           <Grid item xs={12} sm={6}>
-              <TextInput fullWidth label = 'City' source = 'city' id = 'city2' />
+            <TextInput fullWidth label="City" source="city" id="city2" />
           </Grid>
           <Grid item xs={12} sm={6}>
-              <TextInput fullWidth label = 'State' source = 'state' id = 'state2'/>
+            <TextInput fullWidth label="State" source="state" id="state2" />
           </Grid>
           <Grid item xs={12} sm={6}>
-              <TextInput fullWidth label = 'Country' source = 'country' id = 'country2'/>
+            <TextInput
+              fullWidth
+              label="Country"
+              source="country"
+              id="country2"
+            />
           </Grid>
           <Grid item xs={12} sm={6}>
-            <TextInput fullWidth label = 'Postal Code' source = 'postalCode' id = 'postalCode2'/>
+            <TextInput
+              fullWidth
+              label="Postal Code"
+              source="postalCode"
+              id="postalCode2"
+            />
           </Grid>
         </Grid>
       </Grid>
